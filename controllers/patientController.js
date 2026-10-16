@@ -148,8 +148,10 @@ export const createPatient = async (req, res) => {
       return res.status(400).json({ message: 'Patient with this ID card already exists' });
     }
 
-    // Use idCard as name fallback if name not provided
-    const patientName = (name && name.trim()) ? name.trim() : idCard.trim();
+    // Use N/A as name — this system only tracks CNIC
+    const patientName = (name && name.trim() && name.trim() !== idCard.trim())
+      ? name.trim()
+      : 'N/A';
 
     // Normalise visitCount (used mainly for imports; defaults to 0)
     const initialVisitCount =
