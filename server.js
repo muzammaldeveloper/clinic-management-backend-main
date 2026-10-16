@@ -12,6 +12,7 @@ const app = express();
 // ─── Middleware ───────────────────────────────────────────────────────────────
 const allowedOrigins = [
   'http://localhost:3000',
+  'https://clinic-management-frontend-main.vercel.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
