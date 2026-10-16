@@ -1,18 +1,22 @@
 import pkg from 'pg';
 const { Pool } = pkg;
-import 'dotenv/config'; 
-// PostgreSQL connection pool
+import 'dotenv/config';
+
+// Supabase Transaction Pooler requires SSL + specific pool settings
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: {
+    rejectUnauthorized: false, // required for Supabase pooler
+  },
+  max: 3,                  // keep low for Vercel serverless (concurrent executions)
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000,
 });
-console.log(process.env.DATABASE_URL);
+
 // Initialize database tables
 const initializeDB = async () => {
   const client = await pool.connect();
-  
+
   try {
     // Users table
     await client.query(`
@@ -76,7 +80,7 @@ const initializeDB = async () => {
       CREATE INDEX IF NOT EXISTS idx_visits_createdAt ON visits("createdAt" DESC);
     `);
 
-    // Create or replace triggers for updatedAt
+    // updatedAt trigger
     await client.query(`
       CREATE OR REPLACE FUNCTION update_updated_at_column()
       RETURNS TRIGGER AS $$
@@ -110,17 +114,13 @@ const initializeDB = async () => {
 
 const connectDB = async () => {
   try {
-    // Test the connection
     const client = await pool.connect();
-    console.log(`PostgreSQL Connected: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'postgres'}`);
+    console.log('PostgreSQL Connected via Supabase Pooler');
     client.release();
-    
-    // Initialize tables
     await initializeDB();
-    
     return pool;
   } catch (error) {
-    console.error(`Error connecting to PostgreSQL: ${error.message}`);
+    console.error(`Database connection failed: ${error.message}`);
     process.exit(1);
   }
 };

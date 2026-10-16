@@ -5,13 +5,11 @@ import connectDB from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true,
@@ -19,40 +17,48 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check — Vercel / uptime monitors use this
+// ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({
-    message: 'Clinic Management System API',
+    message: 'ClinicCare Pro API',
     version: '1.0.0',
     status: 'healthy',
-    database: 'PostgreSQL',
   });
 });
 
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
 
-// 404 handler — must be before error handler
+// ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Global error handler — prevents unhandled crashes
+// ─── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.stack);
+  console.error('Unhandled error:', err.message);
   res.status(err.status || 500).json({
     message: err.message || 'Internal Server Error',
   });
 });
 
-// Connect to PostgreSQL and start server
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+// ─── Start ────────────────────────────────────────────────────────────────────
+// On Vercel (serverless) we export the app directly — no listen() needed.
+// Locally we connect DB first then listen.
+if (process.env.VERCEL) {
+  // Vercel: initialise DB connection pool lazily on first request
+  connectDB().catch((err) => console.error('DB init error:', err.message));
+} else {
+  const PORT = process.env.PORT || 5000;
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch((err) => {
+      console.error('Failed to connect to database:', err.message);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error('Failed to connect to database:', error.message);
-    process.exit(1);
-  });
+}
+
+export default app;
