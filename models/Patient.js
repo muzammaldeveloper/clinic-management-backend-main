@@ -122,11 +122,15 @@ class Patient {
 
   // Update patient
   async update(updates) {
-    const { name, dateOfBirth, type, charges } = updates;
+    const { name, dateOfBirth, type, charges, idCard } = updates;
     const updatesList = [];
     const params = [];
     let paramIndex = 1;
 
+    if (idCard !== undefined) {
+      updatesList.push(`"idCard" = $${paramIndex++}`);
+      params.push(idCard.toUpperCase());
+    }
     if (name !== undefined) {
       updatesList.push(`name = $${paramIndex++}`);
       params.push(name);

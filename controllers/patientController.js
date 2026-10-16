@@ -241,6 +241,39 @@ export const getPatientById = async (req, res) => {
   }
 };
 
+// Update patient CNIC
+export const updatePatientCnic = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { idCard } = req.body;
+    const patient = await Patient.findById(req.params.id);
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Check if new CNIC is already taken by another patient
+    const existing = await Patient.findByIdCard(idCard);
+    if (existing && existing.id !== patient.id) {
+      return res.status(400).json({ message: 'A patient with this CNIC already exists' });
+    }
+
+    const updatedPatient = await patient.update({ idCard });
+
+    res.json({
+      message: 'CNIC updated successfully',
+      patient: updatedPatient.toJSON(),
+    });
+  } catch (error) {
+    console.error('Update CNIC error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Update patient
 export const updatePatient = async (req, res) => {
   try {

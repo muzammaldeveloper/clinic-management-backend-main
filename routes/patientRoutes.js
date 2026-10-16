@@ -6,6 +6,7 @@ import {
   getAllPatients,
   getPatientById,
   updatePatient,
+  updatePatientCnic,
   deletePatient,
   recordVisit,
   markVisitPaid,
@@ -98,6 +99,12 @@ router.post('/', createPatientValidation, createPatient);
 router.get('/', getAllPatients);
 router.get('/:id', getPatientById);
 router.put('/:id', updatePatientValidation, updatePatient);
+router.patch('/:id/cnic', [
+  body('idCard')
+    .trim()
+    .notEmpty().withMessage('CNIC is required')
+    .isLength({ min: 1, max: 50 }).withMessage('CNIC must be between 1 and 50 characters'),
+], updatePatientCnic);
 router.delete('/:id', deletePatient);
 
 // Visit routes
